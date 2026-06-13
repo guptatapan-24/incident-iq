@@ -55,6 +55,7 @@ export default function IncidentForm() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [aiConfigured, setAiConfigured] = useState(true);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkAIStatus() {
@@ -126,6 +127,7 @@ export default function IncidentForm() {
       }
 
       setAiSuggestion(data);
+      setAiSummary(data.summary);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Failed to complete AI analysis.';
       setAiError(errMsg);
@@ -162,7 +164,7 @@ export default function IncidentForm() {
           severity,
           description: description.trim(),
           reported_by: reportedBy.trim() || undefined,
-          ai_summary: aiSuggestion?.summary || null,
+          ai_summary: aiSummary || null,
         }),
       });
 
@@ -182,6 +184,7 @@ export default function IncidentForm() {
       setReportedBy('');
       setErrors({});
       setAiSuggestion(null);
+      setAiSummary(null);
       window.scrollTo(0, 0);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'An unexpected error occurred.';
@@ -439,7 +442,7 @@ export default function IncidentForm() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => setAiSuggestion(null)}
+                      onClick={() => { setAiSuggestion(null); setAiSummary(null); }}
                       className="text-slate-500 hover:text-slate-800 text-xs h-8 font-medium px-3 hover:bg-slate-100"
                     >
                       Dismiss

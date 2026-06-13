@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { SEVERITY_COLORS, STATUS_COLORS } from '@/lib/constants';
@@ -44,6 +45,9 @@ export default function IncidentDetailModal({ incident, isOpen, onClose }: Incid
           <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">
             {incident.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Detailed information about restaurant operational incident {incident.title}.
+          </DialogDescription>
         </DialogHeader>
 
         <hr className="border-slate-100 my-4" />
