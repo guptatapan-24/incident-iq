@@ -1,6 +1,6 @@
 # 🍽️ IncidentIQ — Restaurant Incident Reporting & Analytics Tool
 
-IncidentIQ is a professional, responsive Next.js 16 web application designed to streamline restaurant operational reporting and analytics. It enables staff members to report operational incidents (POS failures, kitchen equipment breakdowns, delivery delays, inventory shortages, etc.) along with image/file evidence and occurrence timestamps. Managers can securely log in to track open incidents, modify status lifecycle states, receive in-app notifications, and review real-time, reactive metrics on an analytics BI dashboard. The application is integrated with Groq AI (LLaMA 3.1) to automatically analyze, summarize, and classify reports.
+IncidentIQ is a professional, responsive Next.js 16 web application designed to streamline restaurant operational reporting and analytics. It enables staff members to report operational incidents (POS failures, kitchen equipment breakdowns, delivery delays, inventory shortages, etc.) along with image/file evidence and occurrence timestamps. Managers can securely log in to track open incidents, modify status lifecycle states, receive in-app notifications, and review real-time, reactive metrics on an analytics BI dashboard. The application is integrated with Groq AI to automatically analyze, summarize, and classify reports.
 
 ---
 
