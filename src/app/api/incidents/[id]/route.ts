@@ -25,6 +25,21 @@ export async function PATCH(
 
     if (error) throw error;
 
+    // Create database notification for status change
+    try {
+      await supabase.from('notifications').insert([
+        {
+          title: `Status Updated: ${data.title}`,
+          message: `Status changed to "${status}".`,
+          type: status === 'Resolved' || status === 'Closed' ? 'success' : 'info',
+          read: false,
+        },
+      ]);
+    } catch (notifErr) {
+      // Fail silently to not block main operation
+      console.error('Failed to create status notification:', notifErr);
+    }
+
     return NextResponse.json(data);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';

@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, category, store_location, severity, reported_by, ai_summary } = body;
+    const { title, description, category, store_location, severity, reported_by, ai_summary, occurred_at, image_url } = body;
 
-    if (!title || !description || !category || !store_location || !severity) {
+    if (!title || !description || !category || !store_location || !severity || !occurred_at) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
           severity,
           reported_by,
           ai_summary,
+          occurred_at,
+          image_url,
           status: 'Open', // default status
         },
       ])
@@ -67,6 +69,25 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    // Create database notification for the new incident
+    let notifType = 'info';
+    if (severity === 'Critical') notifType = 'error';
+    else if (severity === 'High') notifType = 'warning';
+
+    try {
+      await supabase.from('notifications').insert([
+        {
+          title: `New Incident: ${title}`,
+          message: `${severity} incident reported at ${store_location} (${category}).`,
+          type: notifType,
+          read: false,
+        },
+      ]);
+    } catch (notifErr) {
+      // Fail silently to not block main operation
+      console.error('Failed to create notification:', notifErr);
+    }
 
     return NextResponse.json(data);
   } catch (error: unknown) {

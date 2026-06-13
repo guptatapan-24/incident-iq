@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CATEGORIES, SEVERITIES, SEVERITY_COLORS } from '@/lib/constants';
-import { IncidentCategory, IncidentSeverity } from '@/lib/supabase';
+import { IncidentCategory, IncidentSeverity, supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Upload, X, Paperclip } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 
 interface FormErrors {
   title?: string;
@@ -24,6 +25,7 @@ interface FormErrors {
   category?: string;
   severity?: string;
   description?: string;
+  occurred_at?: string;
 }
 
 const SEVERITY_DOT_COLORS: Record<IncidentSeverity, string> = {
@@ -34,12 +36,18 @@ const SEVERITY_DOT_COLORS: Record<IncidentSeverity, string> = {
 };
 
 export default function IncidentForm() {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [storeLocation, setStoreLocation] = useState('');
   const [category, setCategory] = useState<IncidentCategory | ''>('');
   const [severity, setSeverity] = useState<IncidentSeverity | ''>('');
   const [description, setDescription] = useState('');
   const [reportedBy, setReportedBy] = useState('');
+  const [occurredAt, setOccurredAt] = useState('');
+  
+  // File upload states
+  const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
@@ -56,6 +64,46 @@ export default function IncidentForm() {
   const [aiError, setAiError] = useState('');
   const [aiConfigured, setAiConfigured] = useState(true);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      setError('File size must be less than 2MB.');
+      return;
+    }
+
+    setFile(selectedFile);
+    if (selectedFile.type.startsWith('image/')) {
+      const previewUrl = URL.createObjectURL(selectedFile);
+      setFilePreview(previewUrl);
+    } else {
+      setFilePreview('file'); // Placeholder for non-image files like PDF
+    }
+  };
+
+  const handleRemoveFile = () => {
+    if (filePreview && filePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreview);
+    }
+    setFile(null);
+    setFilePreview(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (filePreview && filePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(filePreview);
+      }
+    };
+  }, [filePreview]);
+
+  useEffect(() => {
+    if (user && !reportedBy) {
+      setReportedBy(user.name);
+    }
+  }, [user]);
 
   useEffect(() => {
     async function checkAIStatus() {
@@ -78,6 +126,7 @@ export default function IncidentForm() {
     category !== '',
     severity !== '',
     description.trim() !== '',
+    occurredAt !== '',
   ].filter(Boolean).length;
 
   const validate = (): boolean => {
@@ -87,6 +136,7 @@ export default function IncidentForm() {
     if (!category) newErrors.category = 'Please select a category.';
     if (!severity) newErrors.severity = 'Please select a severity level.';
     if (!description.trim()) newErrors.description = 'Description is required.';
+    if (!occurredAt) newErrors.occurred_at = 'Incident date and time is required.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -152,6 +202,25 @@ export default function IncidentForm() {
     setLoading(true);
 
     try {
+      let imageUrl = '';
+      if (file) {
+        const fileExt = file.name.split('.').pop();
+        const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('incident-attachments')
+          .upload(uniqueName, file);
+
+        if (uploadError) {
+          throw new Error(`Failed to upload attachment: ${uploadError.message}`);
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('incident-attachments')
+          .getPublicUrl(uniqueName);
+
+        imageUrl = publicUrl;
+      }
+
       const response = await fetch('/api/incidents', {
         method: 'POST',
         headers: {
@@ -165,6 +234,8 @@ export default function IncidentForm() {
           description: description.trim(),
           reported_by: reportedBy.trim() || undefined,
           ai_summary: aiSummary || null,
+          occurred_at: occurredAt,
+          image_url: imageUrl || undefined,
         }),
       });
 
@@ -182,6 +253,9 @@ export default function IncidentForm() {
       setSeverity('');
       setDescription('');
       setReportedBy('');
+      setOccurredAt('');
+      setFile(null);
+      setFilePreview(null);
       setErrors({});
       setAiSuggestion(null);
       setAiSummary(null);
@@ -254,12 +328,12 @@ export default function IncidentForm() {
             </div>
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-full px-3 py-1.5 self-start sm:self-auto">
               <span className="text-[11px] font-semibold text-slate-600">
-                {filledFieldsCount}/5 filled
+                {filledFieldsCount}/6 filled
               </span>
               <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                 <div 
                   className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
-                  style={{ width: `${(filledFieldsCount / 5) * 100}%` }}
+                  style={{ width: `${(filledFieldsCount / 6) * 100}%` }}
                 />
               </div>
             </div>
@@ -281,7 +355,7 @@ export default function IncidentForm() {
             {errors.title && <p className="text-xs font-medium text-red-600">{errors.title}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category" className="text-sm font-medium text-slate-700">
@@ -335,6 +409,21 @@ export default function IncidentForm() {
                 </SelectContent>
               </Select>
               {errors.severity && <p className="text-xs font-medium text-red-600">{errors.severity}</p>}
+            </div>
+
+            {/* Date & Time of Occurrence */}
+            <div className="space-y-2">
+              <Label htmlFor="occurredAt" className="text-sm font-medium text-slate-700">
+                Date & Time <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="occurredAt"
+                type="datetime-local"
+                value={occurredAt}
+                onChange={(e) => setOccurredAt(e.target.value)}
+                className={errors.occurred_at ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-200'}
+              />
+              {errors.occurred_at && <p className="text-xs font-medium text-red-600">{errors.occurred_at}</p>}
             </div>
           </div>
 
@@ -493,6 +582,62 @@ export default function IncidentForm() {
                 className="border-slate-200"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Section 3: Attachments */}
+        <div className="space-y-4 pt-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">File & Image Attachments</h3>
+            <p className="text-xs text-slate-500">Upload a screenshot, photo, or document related to the incident.</p>
+          </div>
+          <hr className="border-slate-100" />
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-slate-700">Attachment</Label>
+            
+            {filePreview ? (
+              <div className="relative rounded-lg border border-slate-200 bg-slate-50/50 p-4 flex items-center justify-between group animate-fade-in">
+                <div className="flex items-center gap-3">
+                  {file?.type.startsWith('image/') ? (
+                    <div className="relative h-16 w-16 rounded-md overflow-hidden border border-slate-200 bg-white shrink-0">
+                      <img src={filePreview} alt="Preview" className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="h-16 w-16 rounded-md border border-slate-200 bg-white flex items-center justify-center text-slate-400 shrink-0">
+                      <Paperclip className="h-8 w-8" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{file?.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {file ? (file.size / 1024 / 1024).toFixed(2) : 0} MB
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRemoveFile}
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full h-8 w-8 transition-colors shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer group relative">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  accept="image/*,application/pdf"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <Upload className="h-8 w-8 text-slate-400 group-hover:scale-110 transition-transform mb-2" />
+                <span className="text-sm font-semibold text-slate-700">Click to upload or drag & drop</span>
+                <span className="text-xs text-slate-500 mt-1">Image or PDF (max 2MB)</span>
+              </div>
+            )}
           </div>
         </div>
 
