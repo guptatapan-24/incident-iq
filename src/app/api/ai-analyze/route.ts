@@ -67,7 +67,6 @@ Critical: immediate action required, complete outage or safety issue`;
     });
 
     if (!response.ok) {
-      console.error('Groq API Error:', await response.text());
       return NextResponse.json({ error: 'AI service unavailable' }, { status: 502 });
     }
 
@@ -90,11 +89,10 @@ Critical: immediate action required, complete outage or safety issue`;
       }
       return NextResponse.json(parsedContent);
     } catch (parseError) {
-      console.error('Failed to parse AI response content:', content, parseError);
       return NextResponse.json({ error: 'AI response parsing failed' }, { status: 500 });
     }
-  } catch (error: any) {
-    console.error('Unexpected error in ai-analyze route:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

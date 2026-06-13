@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import IncidentDetailModal from './IncidentDetailModal';
 import { SEVERITY_COLORS, STATUS_COLORS, STATUSES } from '@/lib/constants';
 import { Incident, IncidentStatus, IncidentSeverity } from '@/lib/supabase';
 import {
@@ -30,13 +31,14 @@ interface IncidentTableProps {
 }
 
 const SEVERITY_ROW_BORDERS: Record<IncidentSeverity, string> = {
-  Low: 'border-l-4 border-l-green-500',
-  Medium: 'border-l-4 border-l-yellow-500',
-  High: 'border-l-4 border-l-orange-500',
+  Low: 'border-l-4 border-l-green-400',
+  Medium: 'border-l-4 border-l-yellow-400',
+  High: 'border-l-4 border-l-orange-400',
   Critical: 'border-l-4 border-l-red-500',
 };
 
 export default function IncidentTable({ incidents, onStatusChange, loading }: IncidentTableProps) {
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
@@ -110,7 +112,7 @@ export default function IncidentTable({ incidents, onStatusChange, loading }: In
               try {
                 timeDistance = formatDistanceToNow(new Date(incident.created_at), { addSuffix: true });
               } catch (e) {
-                console.error(e);
+                // Keep default timeDistance
               }
 
               return (
@@ -123,17 +125,25 @@ export default function IncidentTable({ incidents, onStatusChange, loading }: In
                   </TableCell>
                   <TableCell className="max-w-[280px]">
                     <div className="flex flex-col space-y-1">
-                      <span className="font-semibold text-slate-900 leading-snug break-words flex items-center gap-1.5">
-                        {incident.title}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button 
+                          onClick={() => setSelectedIncident(incident)}
+                          className="font-semibold text-left text-blue-600 hover:underline leading-snug break-words focus:outline-none focus:ring-1 focus:ring-blue-600 rounded"
+                        >
+                          {incident.title}
+                        </button>
                         {incident.ai_summary && (
-                          <span 
-                            title={incident.ai_summary} 
-                            className="cursor-help text-indigo-500 hover:text-indigo-600 transition-colors inline-block select-none text-xs"
-                          >
-                            ✨
+                          <span className="group relative inline-block select-none shrink-0 align-middle">
+                            <span className="cursor-help text-indigo-500 hover:text-indigo-600 transition-colors text-xs">
+                              ✨
+                            </span>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 scale-0 transition-all rounded-md bg-slate-900 p-2.5 text-xs text-white group-hover:scale-100 whitespace-normal break-words shadow-md font-normal leading-relaxed z-50 pointer-events-none opacity-0 group-hover:opacity-100">
+                              <span className="font-semibold text-indigo-300 block mb-0.5">✨ AI Operational Summary</span>
+                              {incident.ai_summary}
+                            </span>
                           </span>
                         )}
-                      </span>
+                      </div>
                       <span className="text-xs text-slate-500 leading-normal break-words">
                         {incident.store_location}
                       </span>
@@ -178,6 +188,11 @@ export default function IncidentTable({ incidents, onStatusChange, loading }: In
           </TableBody>
         </Table>
       </div>
+      <IncidentDetailModal
+        incident={selectedIncident}
+        isOpen={selectedIncident !== null}
+        onClose={() => setSelectedIncident(null)}
+      />
     </div>
   );
 }

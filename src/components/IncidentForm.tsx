@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { CATEGORIES, SEVERITIES, SEVERITY_COLORS } from '@/lib/constants';
 import { IncidentCategory, IncidentSeverity } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,30 @@ export default function IncidentForm() {
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [aiConfigured, setAiConfigured] = useState(true);
+
+  useEffect(() => {
+    async function checkAIStatus() {
+      try {
+        const res = await fetch('/api/ai-status');
+        if (res.ok) {
+          const data = await res.json();
+          setAiConfigured(data.configured);
+        }
+      } catch (e) {
+        setAiConfigured(false);
+      }
+    }
+    checkAIStatus();
+  }, []);
+
+  const filledFieldsCount = [
+    title.trim() !== '',
+    storeLocation.trim() !== '',
+    category !== '',
+    severity !== '',
+    description.trim() !== '',
+  ].filter(Boolean).length;
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -101,8 +126,9 @@ export default function IncidentForm() {
       }
 
       setAiSuggestion(data);
-    } catch (err: any) {
-      setAiError(err.message || 'Failed to complete AI analysis.');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to complete AI analysis.';
+      setAiError(errMsg);
     } finally {
       setAiLoading(false);
     }
@@ -157,8 +183,9 @@ export default function IncidentForm() {
       setErrors({});
       setAiSuggestion(null);
       window.scrollTo(0, 0);
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(errMsg);
       window.scrollTo(0, 0);
     } finally {
       setLoading(false);
@@ -167,26 +194,37 @@ export default function IncidentForm() {
 
   if (successId) {
     return (
-      <Card className="border-green-200 bg-green-50/50 shadow-sm max-w-2xl mx-auto">
-        <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
-          <div className="rounded-full bg-green-100 p-3 text-green-600">
-            <CheckCircle2 className="h-12 w-12" />
+      <Card className="border-green-200 bg-green-50/50 shadow-md max-w-2xl mx-auto overflow-hidden">
+        <CardContent className="pt-8 pb-8 flex flex-col items-center text-center space-y-5 px-6 sm:px-10">
+          <div className="rounded-full bg-green-100 p-4 text-green-600 animate-pulse">
+            <CheckCircle2 className="h-14 w-14" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-green-900 font-sans">Incident Reported</h3>
-            <p className="text-green-700 max-w-md">
-              Incident reported successfully!
+            <h3 className="text-2xl font-bold text-green-900">Incident Reported!</h3>
+            <p className="text-green-700 max-w-md text-sm">
+              Your operational report has been submitted and is active on the manager dashboard.
             </p>
-            <p className="text-sm font-mono bg-white border border-green-200 rounded px-3 py-1.5 text-green-800 break-all">
-              Incident ID: {successId}
-            </p>
+            <div className="pt-2">
+              <span className="text-xs font-semibold text-slate-500 block mb-1">Incident ID</span>
+              <p className="text-sm font-mono bg-white border border-green-200 rounded-lg px-4 py-2 text-green-800 break-all select-all shadow-2xs inline-block">
+                {successId}
+              </p>
+            </div>
           </div>
-          <Button 
-            onClick={() => setSuccessId(null)}
-            className="mt-4 bg-green-600 hover:bg-green-700 text-white"
-          >
-            Report Another Incident
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full pt-4 max-w-md justify-center">
+            <Button 
+              onClick={() => setSuccessId(null)}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium h-10 px-6 shrink-0"
+            >
+              Report Another Incident
+            </Button>
+            <Link
+              href="/dashboard"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-green-200 bg-white px-6 py-2 text-sm font-medium text-green-800 shadow-2xs hover:bg-green-50 transition-colors"
+            >
+              View Dashboard
+            </Link>
+          </div>
         </CardContent>
       </Card>
     );
@@ -206,9 +244,22 @@ export default function IncidentForm() {
 
         {/* Section 1: Incident Details */}
         <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Incident Details</h3>
-            <p className="text-xs text-slate-500">Provide the core details of the operational issue.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Incident Details</h3>
+              <p className="text-xs text-slate-500">Provide the core details of the operational issue.</p>
+            </div>
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-full px-3 py-1.5 self-start sm:self-auto">
+              <span className="text-[11px] font-semibold text-slate-600">
+                {filledFieldsCount}/5 filled
+              </span>
+              <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+                  style={{ width: `${(filledFieldsCount / 5) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
           <hr className="border-slate-100" />
 
@@ -292,35 +343,47 @@ export default function IncidentForm() {
             <Textarea
               id="description"
               rows={4}
+              maxLength={1000}
               placeholder="Describe the incident in detail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={errors.description ? 'border-red-500 focus-visible:ring-red-500' : 'border-slate-200'}
             />
+            <p className="text-right text-[10px] text-slate-400 font-medium tracking-wide">
+              {description.length} / 1000 characters
+            </p>
             {errors.description && <p className="text-xs font-medium text-red-600">{errors.description}</p>}
           </div>
 
           {/* AI Analysis Block */}
           <div className="space-y-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!title.trim() || !description.trim() || aiLoading}
-              onClick={analyzeWithAI}
-              className="flex items-center gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 transition-colors h-10 font-medium"
-            >
-              {aiLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <span>✨</span>
-                  Analyze with AI
-                </>
+            <div className="relative group inline-block">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!aiConfigured || !title.trim() || !description.trim() || aiLoading}
+                onClick={analyzeWithAI}
+                className="flex items-center gap-2 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 transition-colors h-10 font-medium"
+              >
+                {aiLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    Analyze with AI
+                  </>
+                )}
+              </Button>
+
+              {!aiConfigured && (
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 scale-0 transition-all rounded bg-slate-900 px-2.5 py-1 text-xs text-white group-hover:scale-100 whitespace-nowrap shadow-md z-50 font-normal">
+                  AI analysis not configured
+                </span>
               )}
-            </Button>
+            </div>
 
             {aiError && (
               <p className="text-xs font-medium text-red-600">{aiError}</p>

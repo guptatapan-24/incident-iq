@@ -39,7 +39,6 @@ export default function DashboardPage() {
       const data = await res.json();
       setIncidents(data);
     } catch (err) {
-      console.error(err);
       toast.error('Failed to load incidents. Please refresh the page.');
     } finally {
       setLoading(false);
@@ -83,7 +82,6 @@ export default function DashboardPage() {
       // Refetch incidents to display updated list
       fetchIncidents(filters);
     } catch (err) {
-      console.error(err);
       toast.error('Failed to update incident status. Please try again.');
     }
   };
