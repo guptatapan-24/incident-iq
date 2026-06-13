@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -27,8 +28,9 @@ export default function RootLayout({
             <nav className="flex items-center space-x-6 text-sm font-medium">
               <Link
                 href="/report"
-                className="text-slate-600 transition-colors hover:text-slate-950"
+                className="text-slate-600 transition-colors hover:text-slate-950 flex items-center gap-1.5"
               >
+                <PlusCircle className="h-4 w-4 text-blue-600" />
                 Report Incident
               </Link>
               <Link
