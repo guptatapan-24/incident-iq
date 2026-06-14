@@ -69,7 +69,7 @@ IncidentIQ is a professional, responsive Next.js 16 web application designed to 
 ### Steps
 1. **Clone the Repo & Install Dependencies**:
    ```bash
-   git clone <https://github.com/guptatapan-24/incident-iq>
+   git clone https://github.com/guptatapan-24/incident-iq
    cd restaurant-incident-tool
    npm install
    ```
