@@ -25,7 +25,8 @@ This guide outlines step-by-step instructions to deploy the Restaurant Incident 
    Under the **Environment Variables** section, copy and paste the following keys and their respective values from your `.env.local` configuration:
    - `NEXT_PUBLIC_SUPABASE_URL` (your public Supabase project endpoint)
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (your public anon key for database CRUD access)
-   - `GROQ_API_KEY` (your Groq API key for LLaMA 3.1 model categorization)
+   - `GROQ_API_KEY` (your Groq API key for AI categorization)
+   - `AI_MODEL` (set to `openai/gpt-oss-20b`)
 
 5. **Deploy**:
    - Click the **"Deploy"** button.

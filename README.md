@@ -40,7 +40,7 @@ IncidentIQ is a professional, responsive Next.js 16 web application designed to 
 - **Unread Status Handlers**: Individual notification clicks or "Mark all as read" clicks update database status records.
 
 ### 5. 🤖 AI-Powered Incident Analysis
-- Binds with the **Groq API (LLaMA 3.1 8B)** to read incident titles/descriptions, suggest categories/severities, and generate a concise plain-English summary shown as hoverable spark `✨` tooltips in the dashboard table.
+- Binds with the **Groq API (`openai/gpt-oss-20b`)** to read incident titles/descriptions, suggest categories/severities, and generate a concise plain-English summary shown as hoverable spark `✨` tooltips in the dashboard table.
 
 ---
 
@@ -54,7 +54,7 @@ IncidentIQ is a professional, responsive Next.js 16 web application designed to 
 | **Database** | PostgreSQL via Supabase | Relational backend database with Row Level Security (RLS) policies. |
 | **Storage** | Supabase Storage Buckets | Hosted binary storage for PDF documents and image attachments. |
 | **Authentication** | Custom signed cookies | Native Web Crypto API HMAC-SHA256 session tokens. |
-| **AI API** | Groq API (LLaMA 3.1 8B) | High-speed LLM inference for incident auto-classification. |
+| **AI API** | Groq API (`openai/gpt-oss-20b`) | High-speed LLM inference for incident auto-classification. |
 | **Formatting** | date-fns | Human-friendly relative time distances and formatted dates. |
 
 ---
@@ -83,6 +83,7 @@ IncidentIQ is a professional, responsive Next.js 16 web application designed to 
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
    GROQ_API_KEY=your_groq_api_key_here
+   AI_MODEL=openai/gpt-oss-20b
    SESSION_SECRET=optional_random_hash_for_cookie_signing
    ```
 3. **Initialize the Supabase Database & Storage**:
@@ -188,7 +189,7 @@ Follow this workflow to verify all the project features:
 
 ## 📦 External Libraries & Services Used
 - **Supabase (PostgreSQL + Storage)**: Cloud-hosted relational database and object storage engine.
-- **Groq Cloud (LLaMA 3.1 8B)**: Inference service for AI Operational Summaries and Auto-classification suggestions.
+- **Groq Cloud (`openai/gpt-oss-20b`)**: Inference service for AI Operational Summaries and Auto-classification suggestions.
 - **date-fns**: Time utility for relative distance dates ("2 minutes ago") and PPP formatting.
 - **lucide-react**: Vector UI icons for notifications, bells, categories, and controls.
 - **sonner**: Elegant toast notification alert feedbacks on user actions.
@@ -201,4 +202,3 @@ Follow this workflow to verify all the project features:
 Thank you for exploring **IncidentIQ**! This tool was created to bring modern visual design, real-time analytics, and secure role-based access controls to restaurant operational management workflows.
 
 Built with ❤️ using **Next.js 16**, **TypeScript**, **Tailwind CSS**, and **Supabase**.
-

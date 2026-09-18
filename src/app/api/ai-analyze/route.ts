@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     if (!groqApiKey) {
       return NextResponse.json({ error: 'AI API key not configured.' }, { status: 500 });
     }
+    const aiModel = process.env.AI_MODEL?.trim() || 'openai/gpt-oss-20b';
 
     const systemPrompt = `You are an AI assistant for a restaurant operations team. Your job is to analyze incident reports and classify them accurately. You always respond with valid JSON only, no explanation text, no markdown, no code blocks.`;
 
@@ -57,7 +58,7 @@ Critical: immediate action required, complete outage or safety issue`;
         Authorization: `Bearer ${groqApiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: aiModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
