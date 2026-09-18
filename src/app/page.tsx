@@ -89,7 +89,7 @@ export default async function HomePage() {
               <div className="space-y-1">
                 <h3 className="font-bold text-lg text-slate-900">AI Analysis</h3>
                 <p className="text-sm text-slate-500 leading-normal">
-                  Get intelligent category recommendations and plain-English summaries instantly via Groq LLaMA.
+                  Get intelligent category recommendations and plain-English summaries instantly via Groq openai/gpt-oss-20b.
                 </p>
               </div>
             </CardContent>
